@@ -1,0 +1,38 @@
+name: AI Cracker GUI - Otomatik EXE Derleme Hattı
+
+on:
+  workflow_dispatch:
+    # Bu tetikleyici projenin her istendiğinde EXE olarak derlenmesini sağlar
+
+jobs:
+  build_exe:
+    name: CustomTkinter GUI'yi EXE Yap
+    runs-on: windows-latest # Windows tabanlı .exe üretimi için en kararlı ortam
+
+    steps:
+    - name: Kodları GitHub Reposundan Çek
+      uses: actions/checkout@v4
+
+    - name: Python Ortamını Kur
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        architecture: 'x64'
+
+    - name: Gerekli Kütüphaneleri ve PyInstaller'ı Yükle
+      run: |
+        python -m pip install --upgrade pip
+        pip install groq customtkinter pyinstaller
+
+    - name: PyInstaller ile Projeyi Tek Bir EXE Haline Getir
+      run: |
+        # --onedir yerine --onefile kullanarak tüm bağımlılıkları tek bir exe içine gömüyoruz
+        # --noconsole parametresi, program açıldığında arkada siyah CMD ekranının çıkmasını engeller
+        pyinstaller --onefile --noconsole --name="AICrackerAssistant" gui.py
+
+    - name: Hazır EXE Dosyasını Çıktı Olarak Teslim Et
+      uses: actions/upload-artifact@v4
+      with:
+        name: AI-Cracker-Masaustu-Uygulamasi
+        path: dist/AICrackerAssistant.exe
+        
