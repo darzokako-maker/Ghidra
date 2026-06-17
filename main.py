@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-import re
 from groq import Groq
 
 def run_command(command):
@@ -26,7 +25,7 @@ def ida_style_static_analysis(file_path):
         analysis_log.append("Metin tabanlı kritik kelime (strings) bulunamadı veya dosya düz metin.\n")
 
     # 2. Assembly Seviyesinde Karşılaştırma (CMP, TEST, JNE) Noktalarını Yakalama
-    analysis_log.append("🛡️ [DISASSEMBLY MODE] Kritik Dallanma ve Karşılaştırma (cmp, test, jz, jnz) Komutları Ayıklanıyor...")
+    analysis_log.append("🛡️ [DISASSEMBLY MODE] Kritik Dallanma ve Karşılaştırma (cmp, test, je, jne|jz|jnz) Komutları Ayıklanıyor...")
     objdump_cmd = f"objdump -d -M intel '{file_path}' | grep -A 3 -E 'cmp|test|je|jne|jz|jnz' | head -n 150"
     objdump_res = run_command(objdump_cmd)
     if "objdump: command not found" not in objdump_res:
@@ -45,11 +44,8 @@ def ida_style_static_analysis(file_path):
     return "\n".join(analysis_log)
 
 def main():
-    # Güvenli API Anahtarı Yönetimi
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        print("❌ Hata: Ortam değişkenlerinde (Environment Variables) GROQ_API_KEY bulunamadı!")
-        sys.exit(1)
+    # Verilen Groq API Anahtarı doğrudan koda entegre edildi
+    STATIC_GROQ_API_KEY = "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"
 
     if len(sys.argv) < 3:
         print("Hata: Eksik parametre! Kullanım: python main.py <dosya_yolu> '<talimat>'")
@@ -77,8 +73,8 @@ def main():
         except Exception as e:
             extracted_data = f"[Dosya okuma hatası]: {str(e)}"
 
-    # Groq API Ajan Kurulumu
-    client = Groq(api_key=api_key)
+    # Groq API İstemci Kurulumu (Gömülü anahtar kullanılıyor)
+    client = Groq(api_key=STATIC_GROQ_API_KEY)
     
     system_prompt = (
         "Sen IDA Pro, Ghidra ve x64dbg araçlarıyla tam entegre çalışan, dünyanın en gelişmiş Yapay Zeka Tersine Mühendislik Uzmanısın. "
@@ -112,7 +108,7 @@ Senden İstenen Güçlü Analiz:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": agent_prompt}
             ],
-            temperature=0.1  # Tersine mühendislikte kesinlik için sapmayı sıfıra yakın tutuyoruz
+            temperature=0.1
         )
         
         ai_analysis = completion.choices[0].message.content
@@ -134,4 +130,3 @@ Senden İstenen Güçlü Analiz:
 
 if __name__ == "__main__":
     main()
-  
